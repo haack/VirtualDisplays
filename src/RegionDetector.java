@@ -11,7 +11,15 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 public class RegionDetector {
+	
+	public ArrayList<Region> regions;
+	
+	int regionCount = 0;
 	int targetEdgeCount = 4;
+	
+	public RegionDetector() {
+		regions = new ArrayList<Region>();
+	}
 	
 	public Mat detect(Mat input) {
 		Mat img = new Mat();
@@ -20,8 +28,9 @@ public class RegionDetector {
 		preprocess(img);
 		
 		ArrayList<MatOfPoint> contours = findContours(img.clone());
-		
-		filterContours(contours);
+		ArrayList<Point> contourCenter = filterContours(contours);
+
+		track(contours, contourCenter);
 		
 		for (int i = 0; i < contours.size(); i++) {
         	for (int j = 0; j < contours.get(i).rows(); j++) {
@@ -34,9 +43,10 @@ public class RegionDetector {
         		}
                 Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
                 Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
-//                Core.fillConvexPoly(input, contours.get(i), new Scalar(100, 100, 100, 0.7));
+                Core.fillConvexPoly(input, contours.get(i), new Scalar(100, 100, 100, 0.7));
         	}
         }
+		
 		return input;
 	}
 	
@@ -77,7 +87,7 @@ public class RegionDetector {
         return contours;
 	}
 	
-	public void filterContours(ArrayList<MatOfPoint> contours) {
+	public ArrayList<Point> filterContours(ArrayList<MatOfPoint> contours) {
 		
 		
 		for (int i = 0; i < contours.size(); i++) {
@@ -94,10 +104,23 @@ public class RegionDetector {
         		contours.remove(i);
         		i--;
         	}
-        	else if (Math.abs(contours.get(i).get(0, 0)[1] - contours.get(i).get(2, 0)[1]) < 20) {
-        		contours.remove(i);
-        		i--;
-        	}
+        	
+//        	for (int j = 0; j < contours.get(i).rows(); j++) {
+//        		Point vertex = new Point(contours.get(i).get(j, 0)[0], contours.get(i).get(j, 0)[1]);
+//        		Point nextVertex;
+//        		Point prevVertex;
+//        		if (j == contours.get(i).rows() -1) {
+//            		nextVertex = new Point(contours.get(i).get(0, 0)[0], contours.get(i).get(0, 0)[1]);
+//        		} else {
+//            		nextVertex = new Point(contours.get(i).get(j+1, 0)[0], contours.get(i).get(j+1, 0)[1]);
+//        		}
+//        		
+//        		if (j == 0) {
+//        			prevVertex = new Point(contours.get(i).get(contours.get(i).rows()-1, 0)[0], contours.get(i).get(contours.get(i).rows()-1, 0)[1]); 	
+//        		} else {
+//            		prevVertex = new Point(contours.get(i).get(j-1, 0)[0], contours.get(i).get(j-1, 0)[1]);
+//        		}
+//        	}
         }
 		
 		ArrayList<Point> contourCenter = new ArrayList<Point>();
@@ -111,11 +134,12 @@ public class RegionDetector {
 	    	}
 	    	total.x /= j-1;
     		total.y /= j-1;
-    		System.out.println("\nindex: " + i);
-    		System.out.println("x: " + total.x);
-    		System.out.println("y: " + total.y);
+//    		System.out.println("\nindex: " + i);
+//    		System.out.println("x: " + total.x);
+//    		System.out.println("y: " + total.y);
 			contourCenter.add(i, total);
 		}
+		
 		//remove contours with duplicate centre points
 		for (int i = 0; i < contours.size(); i++) {
 			for (int j = 0; j < contours.size(); j++) {
@@ -123,7 +147,7 @@ public class RegionDetector {
 					if (i != j) {
 						if (Math.abs(contourCenter.get(i).x - contourCenter.get(j).x) < 10) {
 							if (Math.abs(contourCenter.get(i).y - contourCenter.get(j).y) < 10) {
-								System.out.println("\n\nGOTCHA\n\n");
+//								System.out.println("\n\nGOTCHA\n\n");
 								//remove if smaller (if larger it will be removed on checking other node)
 								if (Math.abs(contours.get(i).get(0, 0)[0] - contours.get(i).get(1, 0)[0]) < Math.abs(contours.get(j).get(0, 0)[0] - contours.get(j).get(1, 0)[0])) {
 									contours.remove(j);
@@ -134,6 +158,26 @@ public class RegionDetector {
 						}
 					}
 				}
+			}
+		}
+		return contourCenter;
+	}
+	
+	public void track(ArrayList<MatOfPoint> contours, ArrayList<Point> contourCenter) {
+		for (int i = 0; i < contours.size(); i++) {
+			boolean matched = false;
+			outerloop:
+			for (int j = 0; j < regions.size(); j++) {
+				if (regions.get(j).isMatch(contours.get(i), contourCenter.get(i))) {
+					//do matching stuff
+					matched = true;
+					break outerloop;
+				}
+			}
+			if (!matched) {
+				//add new region
+				regions.add(new Region(regionCount, contourCenter.get(i)));
+				regionCount++;
 			}
 		}
 	}
