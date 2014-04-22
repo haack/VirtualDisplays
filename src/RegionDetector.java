@@ -32,7 +32,7 @@ public class RegionDetector {
 
 		track(contours, contourCenter);
 		
-		for (int i = 0; i < contours.size(); i++) {
+		/*for (int i = 0; i < contours.size(); i++) {
         	for (int j = 0; j < contours.get(i).rows(); j++) {
         		Point vertex = new Point(contours.get(i).get(j, 0)[0], contours.get(i).get(j, 0)[1]);
         		Point nextVertex;
@@ -44,6 +44,21 @@ public class RegionDetector {
                 Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
                 Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
                 Core.fillConvexPoly(input, contours.get(i), new Scalar(100, 100, 100, 0.7));
+        	}
+        }*/
+		
+		for (int i = 0; i < regions.size(); i++) {
+        	for (int j = 0; j < regions.get(i).contour.rows(); j++) {
+        		Point vertex = new Point(regions.get(i).contour.get(j, 0)[0], regions.get(i).contour.get(j, 0)[1]);
+        		Point nextVertex;
+        		if (j == regions.get(i).contour.rows() -1) {
+        			nextVertex = new Point(regions.get(i).contour.get(0, 0)[0], regions.get(i).contour.get(0, 0)[1]);
+        		} else {
+            		nextVertex = new Point(regions.get(i).contour.get(j+1, 0)[0], regions.get(i).contour.get(j+1, 0)[1]);
+        		}
+                Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
+                Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
+                Core.fillConvexPoly(input, regions.get(i).contour, new Scalar(100, 100, 100, 0.7));
         	}
         }
 		
@@ -176,9 +191,13 @@ public class RegionDetector {
 			}
 			if (!matched) {
 				//add new region
-				regions.add(new Region(regionCount, contourCenter.get(i)));
+				regions.add(new Region(regionCount, contours.get(i), contourCenter.get(i)));
 				regionCount++;
 			}
+		}
+		
+		for (int i = 0; i < regions.size(); i++) {
+			regions.get(i).active = false;
 		}
 	}
 }
