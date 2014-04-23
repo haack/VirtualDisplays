@@ -57,7 +57,12 @@ public class RegionDetector {
 	        		} else {
 	            		nextVertex = new Point(regions.get(i).contour.get(j+1, 0)[0], regions.get(i).contour.get(j+1, 0)[1]);
 	        		}
-	                Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
+	                if (j == 0) {
+	                	Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
+	                } else {
+	                	Core.circle(input, vertex, 5, new Scalar(0,0,0), 1);
+	                }
+	        		
 	                Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
 	                Core.fillConvexPoly(input, regions.get(i).contour, new Scalar(100, 100, 100, 0.7));
 	        	}
@@ -160,8 +165,8 @@ public class RegionDetector {
 	    		total.x += contours.get(i).get(j, 0)[0];
 	    		total.y += contours.get(i).get(j, 0)[1];
 	    	}
-	    	total.x /= j-1;
-    		total.y /= j-1;
+	    	total.x /= j+1;
+    		total.y /= j+1;
 //    		System.out.println("\nindex: " + i);
 //    		System.out.println("x: " + total.x);
 //    		System.out.println("y: " + total.y);
@@ -200,14 +205,17 @@ public class RegionDetector {
 			boolean matched = false;
 			outerloop:
 			for (int j = 0; j < regions.size(); j++) {
+				
 				if (regions.get(j).isMatch(contours.get(i), contourCenter.get(i))) {
 					//do matching stuff
+					System.out.println("Match");
 					matched = true;
 					break outerloop;
 				}
 			}
 			if (!matched) {
 				//add new region
+				System.out.println(contourCenter.get(i));
 				regions.add(new Region(regionCount, contours.get(i), contourCenter.get(i)));
 				regionCount++;
 			}

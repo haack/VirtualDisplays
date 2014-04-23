@@ -128,8 +128,8 @@ public class VirtualDisplays implements Runnable, MouseListener {
 			mat = rd.detect(mat);
 			
 			//regionOverlay
+			Mat zone = new Mat();
 			
-			System.out.println(rd.regionCount);
 			if (rd.regions.size() >= 1) {
 				Mat pers = new Mat(3, 3, CvType.CV_32FC2);
 				
@@ -153,20 +153,16 @@ public class VirtualDisplays implements Runnable, MouseListener {
 				Rect bound = rd.regions.get(0).getBoundingRect();
 				Point tl = new Point(bound.x, bound.y);
 				Point br = new Point(bound.width, bound.height);
-				MatOfPoint src = new MatOfPoint(tl, new Point(br.x,tl.x),br,new Point(tl.x,br.x));
+				MatOfPoint src = new MatOfPoint(tl, new Point(br.x,tl.y), br, new Point(tl.x,br.y));
 				src.convertTo(src, CvType.CV_32F);
 
 		        pers = Imgproc.getPerspectiveTransform(src, dst);
-		        Imgproc.warpPerspective(imageConvert(webcam.getImage()), mat, pers, mat.size());
-		        mat.convertTo(mat, CvType.CV_32F);
+		        
+		        zone.create(bound.size(), CvType.CV_32F);
+		        
+		        Imgproc.warpPerspective(imageConvert(webcam.getImage()), zone, pers, mat.size());
+		        zone.convertTo(zone, CvType.CV_32F);
 	        }
-			
-			for (int i = 0; i < rd.regions.size(); i++) {
-				if (rd.regions.get(i).active) {
-//					Core.fillConvexPoly(mat, rd.regions.get(i).getBoundingRect()., color)
-					
-				}
-			}
 			
 			//render
 			render(imageConvert(mat));
