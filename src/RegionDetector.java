@@ -48,20 +48,21 @@ public class RegionDetector {
         }*/
 		
 		for (int i = 0; i < regions.size(); i++) {
-        	for (int j = 0; j < regions.get(i).contour.rows(); j++) {
-        		Point vertex = new Point(regions.get(i).contour.get(j, 0)[0], regions.get(i).contour.get(j, 0)[1]);
-        		Point nextVertex;
-        		if (j == regions.get(i).contour.rows() -1) {
-        			nextVertex = new Point(regions.get(i).contour.get(0, 0)[0], regions.get(i).contour.get(0, 0)[1]);
-        		} else {
-            		nextVertex = new Point(regions.get(i).contour.get(j+1, 0)[0], regions.get(i).contour.get(j+1, 0)[1]);
-        		}
-                Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
-                Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
-                Core.fillConvexPoly(input, regions.get(i).contour, new Scalar(100, 100, 100, 0.7));
-        	}
+			if (regions.get(i).active) {
+	        	for (int j = 0; j < regions.get(i).contour.rows(); j++) {
+	        		Point vertex = new Point(regions.get(i).contour.get(j, 0)[0], regions.get(i).contour.get(j, 0)[1]);
+	        		Point nextVertex;
+	        		if (j == regions.get(i).contour.rows() -1) {
+	        			nextVertex = new Point(regions.get(i).contour.get(0, 0)[0], regions.get(i).contour.get(0, 0)[1]);
+	        		} else {
+	            		nextVertex = new Point(regions.get(i).contour.get(j+1, 0)[0], regions.get(i).contour.get(j+1, 0)[1]);
+	        		}
+	                Core.circle(input, vertex, 5, new Scalar(100,100,100), 1);
+	                Core.line(input, vertex, nextVertex, new Scalar(1, 1, 1));
+	                Core.fillConvexPoly(input, regions.get(i).contour, new Scalar(100, 100, 100, 0.7));
+	        	}
+			}
         }
-		
 		return input;
 	}
 	
@@ -118,24 +119,36 @@ public class RegionDetector {
         	else if (Math.abs(contours.get(i).get(0, 0)[1] - contours.get(i).get(2, 0)[1]) < 20) {
         		contours.remove(i);
         		i--;
+        	} else {
+        		outerloop:
+        		for (int j = 0; j < contours.get(i).rows(); j++) {
+            		Point vertex = new Point(contours.get(i).get(j, 0)[0], contours.get(i).get(j, 0)[1]);
+            		Point nextVertex;
+            		Point prevVertex;
+            		if (j == contours.get(i).rows() -1) {
+                		nextVertex = new Point(contours.get(i).get(0, 0)[0], contours.get(i).get(0, 0)[1]);
+            		} else {
+                		nextVertex = new Point(contours.get(i).get(j+1, 0)[0], contours.get(i).get(j+1, 0)[1]);
+            		}
+            		
+            		if (j == 0) {
+            			prevVertex = new Point(contours.get(i).get(contours.get(i).rows()-1, 0)[0], contours.get(i).get(contours.get(i).rows()-1, 0)[1]); 	
+            		} else {
+                		prevVertex = new Point(contours.get(i).get(j-1, 0)[0], contours.get(i).get(j-1, 0)[1]);
+            		}
+            		double angle = Math.abs(Math.toDegrees(Math.atan2(prevVertex.x - vertex.x,prevVertex.y - vertex.y)-
+                            Math.atan2(nextVertex.x- vertex.x,nextVertex.y- vertex.y)));
+            		
+            		int threshold = 50;
+            		//only works properly for 2 corners
+            		if ((angle < threshold) || (angle > (360 - threshold))) {
+            			contours.remove(i);
+                		i--;
+                		System.out.println("Removing with angle: " + angle);
+                		break outerloop;
+    				}
+            	}
         	}
-        	
-//        	for (int j = 0; j < contours.get(i).rows(); j++) {
-//        		Point vertex = new Point(contours.get(i).get(j, 0)[0], contours.get(i).get(j, 0)[1]);
-//        		Point nextVertex;
-//        		Point prevVertex;
-//        		if (j == contours.get(i).rows() -1) {
-//            		nextVertex = new Point(contours.get(i).get(0, 0)[0], contours.get(i).get(0, 0)[1]);
-//        		} else {
-//            		nextVertex = new Point(contours.get(i).get(j+1, 0)[0], contours.get(i).get(j+1, 0)[1]);
-//        		}
-//        		
-//        		if (j == 0) {
-//        			prevVertex = new Point(contours.get(i).get(contours.get(i).rows()-1, 0)[0], contours.get(i).get(contours.get(i).rows()-1, 0)[1]); 	
-//        		} else {
-//            		prevVertex = new Point(contours.get(i).get(j-1, 0)[0], contours.get(i).get(j-1, 0)[1]);
-//        		}
-//        	}
         }
 		
 		ArrayList<Point> contourCenter = new ArrayList<Point>();
@@ -179,6 +192,10 @@ public class RegionDetector {
 	}
 	
 	public void track(ArrayList<MatOfPoint> contours, ArrayList<Point> contourCenter) {
+		for (int i = 0; i < regions.size(); i++) {
+			regions.get(i).active = false;
+		}
+		
 		for (int i = 0; i < contours.size(); i++) {
 			boolean matched = false;
 			outerloop:
@@ -194,10 +211,6 @@ public class RegionDetector {
 				regions.add(new Region(regionCount, contours.get(i), contourCenter.get(i)));
 				regionCount++;
 			}
-		}
-		
-		for (int i = 0; i < regions.size(); i++) {
-			regions.get(i).active = false;
 		}
 	}
 }

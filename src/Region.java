@@ -1,6 +1,7 @@
 import org.opencv.core.Core;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 
 
@@ -12,6 +13,7 @@ public class Region {
 	Point expected;
 	MatOfPoint contour;
 	double circumference;
+	//area?
 	
 	public Region(int id, MatOfPoint contour, Point center) {
 		this.id = id;
@@ -42,7 +44,8 @@ public class Region {
 			if (Math.abs(center.y - testCenter.y) < 50) {
 				center = testCenter;
 				contour = test;
-	     		return true;
+				active = true;
+	     		return true;	     		
 			}
      	}
 		return false;
@@ -50,5 +53,24 @@ public class Region {
 	
 	public double getCircumference() {
 		return circumference;
+	}
+	
+	public Rect getBoundingRect() {
+		Point topleft = center;
+		Point bottomright = center;
+		for (int j = 0; j < contour.rows(); j++) {
+    		Point vertex = new Point(contour.get(j, 0)[0], contour.get(j, 0)[1]);
+    		if (vertex.x < topleft.x) {
+    			topleft.x = vertex.x;
+    		} else if (vertex.x > bottomright.x) {
+    			bottomright.x = vertex.x;
+    		} 
+    		if (vertex.y < topleft.y) {
+    			topleft.y = vertex.y;
+    		} else if (vertex.y > bottomright.y) {
+    			bottomright.y = vertex.y;
+    		} 
+        }
+		return new Rect(topleft, bottomright);
 	}
 }

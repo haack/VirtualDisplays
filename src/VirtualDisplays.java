@@ -18,6 +18,11 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfInt;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
@@ -123,6 +128,45 @@ public class VirtualDisplays implements Runnable, MouseListener {
 			mat = rd.detect(mat);
 			
 			//regionOverlay
+			
+			System.out.println(rd.regionCount);
+			if (rd.regions.size() >= 1) {
+				Mat pers = new Mat(3, 3, CvType.CV_32FC2);
+				
+//				Mat src = rd.regions.get(0).contour;
+//				src.convertTo(src, CvType.CV_32F);
+				
+//				Mat src = new Mat();
+//				rd.regions.get(0).contour.copyTo(src); //hard to create a matofpoint from scratch so steal it
+//				src.get(0, 0)[0] = 0;  //point 1, x
+//				src.get(0, 0)[1] = 0;  //point 1, y
+//				src.get(1, 0)[0] = panel.getWidth();
+//				src.get(1, 0)[1] = 0;
+//				src.get(2, 0)[0] = 0;
+//				src.get(2, 0)[1] = panel.getHeight();
+//				src.get(3, 0)[0] = panel.getWidth();
+//				src.get(3, 0)[1] = panel.getHeight();
+//				src.convertTo(src, CvType.CV_32F);
+				Mat dst = rd.regions.get(0).contour;
+				dst.convertTo(dst, CvType.CV_32F);
+				
+				Rect bound = rd.regions.get(0).getBoundingRect();
+				Point tl = new Point(bound.x, bound.y);
+				Point br = new Point(bound.width, bound.height);
+				MatOfPoint src = new MatOfPoint(tl, new Point(br.x,tl.x),br,new Point(tl.x,br.x));
+				src.convertTo(src, CvType.CV_32F);
+
+		        pers = Imgproc.getPerspectiveTransform(src, dst);
+		        Imgproc.warpPerspective(imageConvert(webcam.getImage()), mat, pers, mat.size());
+		        mat.convertTo(mat, CvType.CV_32F);
+	        }
+			
+			for (int i = 0; i < rd.regions.size(); i++) {
+				if (rd.regions.get(i).active) {
+//					Core.fillConvexPoly(mat, rd.regions.get(i).getBoundingRect()., color)
+					
+				}
+			}
 			
 			//render
 			render(imageConvert(mat));
